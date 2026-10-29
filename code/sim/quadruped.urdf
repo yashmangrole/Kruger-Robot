@@ -1,0 +1,135 @@
+<?xml version="1.0"?>
+<robot name="simple_quadruped">
+
+  <!-- Define some constants for dimensions -->
+  <material name="grey">
+    <color rgba="0.5 0.5 0.5 1"/>
+  </material>
+  <material name="dark_grey">
+    <color rgba="0.3 0.3 0.3 1"/>
+  </material>
+   <material name="blue">
+    <color rgba="0.0 0.0 0.8 1"/>
+  </material>
+
+  <!-- ********************* BASE LINK (Chassis) ********************* -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.4 0.3 0.08"/> <!-- Length, Width, Height -->
+      </geometry>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.4 0.3 0.08"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="5.0"/>
+      <!-- Box inertia formula: (1/12)*m*(y^2+z^2), (1/12)*m*(x^2+z^2), (1/12)*m*(x^2+y^2) -->
+      <inertia ixx="0.014" ixy="0" ixz="0"
+               iyy="0.034" iyz="0"
+               izz="0.042" />
+    </inertial>
+  </link>
+
+  <!-- Constants for leg dimensions and positions -->
+  <!-- Using ROS conventions: x forward, y left, z up -->
+  <!-- Hip positions relative to base_link origin -->
+  <!-- FR: Front Right, FL: Front Left, RR: Rear Right, RL: Rear Left -->
+  <property name="hip_x_offset" value="0.18" /> <!-- Half body length -->
+  <property name="hip_y_offset" value="0.13" /> <!-- Half body width + leg clearance -->
+  <property name="hip_z_offset" value="0.0" />  <!-- Hip joint height relative to body center -->
+
+  <property name="upper_leg_length" value="0.2" />
+  <property name="lower_leg_length" value="0.2" />
+  <property name="leg_link_radius" value="0.02" /> <!-- For cylinder visuals -->
+  <property name="leg_mass_upper" value="0.5" />
+  <property name="leg_mass_lower" value="0.3" />
+
+
+  <!-- Macro for generating a leg -->
+  <macro name="leg" params="prefix side x_mult y_mult">
+    <!-- Side: 'R' or 'L' -->
+    <!-- x_mult: 1 for front, -1 for rear -->
+    <!-- y_mult: -1 for right, 1 for left -->
+
+    <!-- ************** HIP LINK ************** -->
+    <link name="${prefix}_${side}_hip_link">
+       <visual>
+         <origin xyz="0 0 ${-upper_leg_length/2}" rpy="0 0 0"/>
+         <geometry>
+           <!-- Using a slightly offset box to visualize rotation axis better -->
+           <box size="0.04 0.04 ${upper_leg_length}"/>
+         </geometry>
+         <material name="dark_grey"/>
+       </visual>
+       <collision>
+         <origin xyz="0 0 ${-upper_leg_length/2}" rpy="0 0 0"/>
+         <geometry>
+           <box size="0.04 0.04 ${upper_leg_length}"/>
+         </geometry>
+       </collision>
+       <inertial>
+         <origin xyz="0 0 ${-upper_leg_length/2}" rpy="0 0 0"/>
+         <mass value="${leg_mass_upper}"/>
+         <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.0001"/>
+       </inertial>
+    </link>
+
+    <joint name="${prefix}_${side}_hip_joint" type="revolute">
+      <parent link="base_link"/>
+      <child link="${prefix}_${side}_hip_link"/>
+      <origin xyz="${x_mult*hip_x_offset} ${y_mult*hip_y_offset} ${hip_z_offset}" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/> <!-- Rotate around Y for forward/backward swing -->
+      <limit lower="-1.0" upper="1.0" effort="10" velocity="5"/>
+      <dynamics damping="0.1" friction="0.05"/>
+    </joint>
+
+    <!-- ************** LOWER LEG LINK ************** -->
+    <link name="${prefix}_${side}_lower_leg_link">
+       <visual>
+         <origin xyz="0 0 ${-lower_leg_length/2}" rpy="0 0 0"/>
+         <geometry>
+           <box size="0.03 0.03 ${lower_leg_length}"/>
+         </geometry>
+         <material name="blue"/>
+       </visual>
+       <collision>
+         <origin xyz="0 0 ${-lower_leg_length/2}" rpy="0 0 0"/>
+         <geometry>
+            <box size="0.03 0.03 ${lower_leg_length}"/>
+         </geometry>
+       </collision>
+       <inertial>
+         <origin xyz="0 0 ${-lower_leg_length/2}" rpy="0 0 0"/>
+         <mass value="${leg_mass_lower}"/>
+         <inertia ixx="0.0005" ixy="0" ixz="0" iyy="0.0005" iyz="0" izz="0.00005"/>
+       </inertial>
+    </link>
+
+    <joint name="${prefix}_${side}_knee_joint" type="revolute">
+      <parent link="${prefix}_${side}_hip_link"/>
+      <child link="${prefix}_${side}_lower_leg_link"/>
+      <origin xyz="0 0 ${-upper_leg_length}" rpy="0 0 0"/> <!-- Joint at the end of the hip link -->
+      <axis xyz="0 1 0"/> <!-- Rotate around Y, parallel to hip joint -->
+      <limit lower="-2.5" upper="0.0" effort="10" velocity="5"/> <!-- Knee typically bends backward -->
+      <dynamics damping="0.1" friction="0.05"/>
+    </joint>
+
+  </macro>
+
+  <!-- Instantiate the four legs using the macro -->
+  <leg prefix="front" side="R" x_mult="1"  y_mult="-1"/>
+  <leg prefix="front" side="L" x_mult="1"  y_mult="1" />
+  <leg prefix="rear"  side="R" x_mult="-1" y_mult="-1"/>
+  <leg prefix="rear"  side="L" x_mult="-1" y_mult="1" />
+
+</robot>
+Final control_joints_dict keys BEFORE loop: [...]
+Complete control_joints_dict: {...}
+ERROR: Critical controllable joints MISSING...

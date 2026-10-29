@@ -1,0 +1,4 @@
+pylx16a
+pyserial
+PyQt6
+pybullet
