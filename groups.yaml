@@ -1,0 +1,7 @@
+# Groups — what belongs together on this design (update 30).
+# Written once by Vel on 2026-11-03; edit freely, Vel never rewrites this file.
+# "reset the groups" starts over.
+# owner: the teammate (email, name or user id) who accepts this group's numbers.
+# A row named _goals says who owns the goals; with none, whoever stated the first goal.
+# Any other row with no owner: whoever is working decides.
+[]
